@@ -85,6 +85,7 @@ export default LoginScreen
 
 const styles = StyleSheet.create({
     container: {
+        backgroundColor: '#ffd000',
         flex: 1,
         justifyContent: 'space-evenly',
         alignItems: 'center',
@@ -99,7 +100,7 @@ const styles = StyleSheet.create({
         width: '100%',
         height: 200,
         resizeMode: 'contain',
-        marginBottom: 20,
+        marginVertical: 20,
     },
     inputContainer: {
         width: '80%'
@@ -115,19 +116,18 @@ const styles = StyleSheet.create({
         width: '60%',
         justifyContent: 'center',
         alignItems: 'center',
-        marginTop: 5,
     },
     button: {
-        backgroundColor: '#0782F9',
+        backgroundColor: '#171717',
         width: '100%',
         padding: 15,
         borderRadius: 10,
         alignItems: 'center',
     },
     buttonOutline: {
-        backgroundColor: 'white',
+        backgroundColor: '#ffd000',
         marginTop: 5,
-        borderColor: '#0782F9',
+        borderColor: '#171717',
         borderWidth: 2,
     },
     buttonText: {
@@ -136,7 +136,7 @@ const styles = StyleSheet.create({
         fontSize: 16,
     },
     buttonOutlineText: {
-        color: '#0782F9',
+        color: '#171717',
         fontWeight: '700',
         fontSize: 16,
     },

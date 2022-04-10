@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView } from 'react-native'
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, StatusBar } from 'react-native'
 import React from 'react'
 import { getAuth } from 'firebase/auth'
 import { useNavigation } from '@react-navigation/core';
@@ -9,6 +9,9 @@ const HomeScreen = () => {
 
 
     const navigation = useNavigation();
+    const currentDate = new Date();
+    const currentDay = currentDate.toISOString().split('T')[0];
+
 
     const auth = getAuth();
     const handleSignOut = () => {
@@ -21,49 +24,65 @@ const HomeScreen = () => {
     }
 
     return (
-        <ScrollView >
-            <View style={styles.container}>
-                <View style={styles.body}>
+        <View>
+            <StatusBar
+                backgroundColor="#171717"
+                barStyle="light-content"
+            />
 
-                    <View style={styles.header}>
-                        {/* <Text>Signed in as: {auth.currentUser?.email}</Text> */}
-                        <Text style={styles.sectionTitle}>Hello, Jeffrey!</Text>
-                        <TouchableOpacity style={styles.button} onPress={handleSignOut}>
-                            <Text style={styles.buttonText}>Sign out</Text>
-                        </TouchableOpacity>
+            <ScrollView >
+                <View style={styles.container}>
+                    <View style={styles.body}>
+
+                        <View style={styles.header}>
+                            {/* <Text>Signed in as: {auth.currentUser?.email}</Text> */}
+                            <Text style={styles.sectionTitle}>Hello, Jeffrey!</Text>
+                            <TouchableOpacity style={styles.button} onPress={handleSignOut}>
+                                <Text style={styles.buttonText}>Sign out</Text>
+                            </TouchableOpacity>
+                        </View>
+
+                        {/* Budget */}
+                        <View style={styles.tasksWrapper}>
+                            <Text style={styles.sectionTitle} >Budget</Text>
+                        </View>
+
+                        {/* Savings */}
+
+                        <View style={styles.tasksWrapper}>
+                            <Text style={styles.sectionTitle} >Savings</Text>
+                        </View>
+
+                        {/* Create a Transaction */}
+                        <View style={styles.tasksWrapper}>
+                            <Text style={styles.sectionTitle} >Create a Transaction</Text>
+                            <Text>Select a category below:</Text>
+                        </View>
+                        <View style={styles.createTransaction}>
+                            <TransactionInput />
+                        </View>
+
+                        {/* Today's Transactions */}
+                        <View style={styles.tasksWrapper}>
+                            <Text style={styles.sectionTitle} >Today's Transactions</Text>
+                            <Text>{currentDay}</Text>
+                        </View>
+
+                        <View style={styles.items}>
+                            {/* This is where the transactions will go! */}
+                            <Task text={'McDonalds'} cost={'8.21'} color={styles.redBG} type={'purchase'} />
+                            <Task text={'Credit Card Payment'} cost={'55'} color={styles.greenBG} type={'purchase'} />
+                            <Task text={'Amazon'} cost={'125.99'} color={styles.blueBG} type={'purchase'} />
+                            <Task text={'Sobeys'} cost={'55.99'} color={styles.blueBG} type={'purchase'} />
+                            <Task text={'Bitcoin'} cost={'60'} color={styles.yellowBG} type={'purchase'} />
+                            <Task text={'McDonalds'} cost={'25.99'} color={styles.redBG} type={'purchase'} />
+                            <Task text={'Bought a whole lotta stupid stuff online'} cost={'99.99'} color={styles.blueBG} type={'purchase'} />
+                            <Task text={'Got Paid'} cost={'750.99'} color={styles.purpleBG} type={'income'} />
+                        </View>
                     </View>
-
-                    {/* Budget */}
-                    <View style={styles.tasksWrapper}>
-                        <Text style={styles.sectionTitle} >Budget</Text>
-                    </View>
-
-                    {/* Savings */}
-
-                    <View style={styles.tasksWrapper}>
-                        <Text style={styles.sectionTitle} >Savings</Text>
-                    </View>
-
-                    {/* Today's Transactions */}
-                    <View style={styles.tasksWrapper}>
-                        <Text style={styles.sectionTitle} >Today's Transactions</Text>
-                    </View>
-
-                    <View style={styles.items}>
-                        {/* This is where the transactions will go! */}
-                        <Task text={'McDonalds'} cost={'8.21'} color={styles.redBG} />
-                        <Task text={'Credit Card Payment'} cost={'55'} color={styles.greenBG} />
-                        <Task text={'Amazon'} cost={'125.99'} color={styles.blueBG} />
-                        <Task text={'Sobeys'} cost={'55.99'} color={styles.blueBG} />
-                        <Task text={'Bitcoin'} cost={'60'} color={styles.yellowBG} />
-                        <Task text={'McDonalds'} cost={'25.99'} color={styles.redBG} />
-                    </View>
-                </View>
-                <View style={styles.footer}>
-                    <TransactionInput />
-                </View>
-            </View >
-        </ScrollView >
+                </View >
+            </ScrollView >
+        </View>
     )
 }
 
@@ -76,7 +95,7 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
         paddingHorizontal: 20,
-        paddingTop: 20,
+        paddingTop: 25,
     },
     container: {
         flex: 1,
@@ -103,27 +122,21 @@ const styles = StyleSheet.create({
     body: {
         flex: 1,
     },
-    footer: {
+    createTransaction: {
         display: 'flex',
         flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: '#363636',
-        borderTopLeftRadius: 20,
-        borderTopRightRadius: 20,
-        marginRight: 15,
-        marginLeft: 15,
     },
     tasksWrapper: {
-        paddingTop: 80,
+        paddingTop: 20,
         paddingHorizontal: 20,
+        marginBottom: 20,
     },
     sectionTitle: {
         fontSize: 24,
         fontWeight: 'bold',
-    },
-    items: {
-        marginTop: 30,
+        color: '#171717',
     },
     redBG: {
         backgroundColor: '#FF5A5F',
@@ -135,6 +148,9 @@ const styles = StyleSheet.create({
         backgroundColor: '#32a852',
     },
     yellowBG: {
-        backgroundColor: '#f4c93d',
+        backgroundColor: '#fcba03',
     },
+    purpleBG: {
+        backgroundColor: '#9c27b0',
+    }
 })

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { KeyboardAvoidingView, TouchableWithoutFeedback, StyleSheet, Text, TextInput, TouchableOpacity, View, Image, Keyboard } from 'react-native'
+import { KeyboardAvoidingView, TouchableWithoutFeedback, StyleSheet, Text, TextInput, TouchableOpacity, View, Image, Keyboard, StatusBar } from 'react-native'
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../firebase';
 import { useNavigation } from '@react-navigation/core';
@@ -42,9 +42,13 @@ const LoginScreen = () => {
 
     return (
         <KeyboardAvoidingView style={styles.container} behavior="height">
+            <StatusBar
+                backgroundColor="#171717"
+                barStyle="light-content"
+            />
             <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
                 <View style={styles.inputContainer}>
-                    <Text style={styles.header}>App of Midas</Text>
+                    <Text style={styles.header}>APP OF MIDAS</Text>
                     <Image
                         style={styles.heroImage}
                         source={require('../assets/coin.png')}
@@ -91,8 +95,8 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     header: {
-        fontSize: 30,
-        fontWeight: '700',
+        fontSize: 40,
+        fontWeight: 'bold',
         marginBottom: 20,
         textAlign: 'center',
     },
@@ -111,6 +115,8 @@ const styles = StyleSheet.create({
         paddingVertical: 10,
         borderRadius: 10,
         marginTop: 5,
+        borderColor: 'rgba(0,0,0,0.3)',
+        borderWidth: 1,
     },
     buttonContainer: {
         width: '60%',

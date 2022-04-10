@@ -17,7 +17,7 @@ export default function App() {
     <NavigationContainer>
       <Stack.Navigator>
         <Stack.Screen options={{ headerShown: false }} name="Login" component={LoginScreen} />
-        <Stack.Screen name="Home" component={HomeScreen} />
+        <Stack.Screen options={{ headerShown: false }} name="Home" component={HomeScreen} />
       </Stack.Navigator>
     </NavigationContainer>
     // <View style={styles.container}>
@@ -60,43 +60,5 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#E8EAED',
-    justifyContent: 'flex-end',
-  },
-  body: {
-    flex: 1,
-  },
-  footer: {
-    display: 'flex',
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#363636',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    marginRight: 15,
-    marginLeft: 15,
-  },
-  tasksWrapper: {
-    paddingTop: 80,
-    paddingHorizontal: 20,
-  },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-  },
-  items: {
-    marginTop: 30,
-  },
-  redBG: {
-    backgroundColor: '#FF5A5F',
-  },
-  blueBG: {
-    backgroundColor: '#55BCF6',
-  },
-  greenBG: {
-    backgroundColor: '#32a852',
-  }
+
 });

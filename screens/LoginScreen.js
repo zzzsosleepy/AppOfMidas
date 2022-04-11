@@ -1,15 +1,18 @@
 import React, { useEffect, useState } from 'react'
-import { KeyboardAvoidingView, TouchableWithoutFeedback, StyleSheet, Text, TextInput, TouchableOpacity, View, Image, Keyboard, StatusBar } from 'react-native'
+import { KeyboardAvoidingView, TouchableWithoutFeedback, StyleSheet, Text, TextInput, TouchableOpacity, View, Image, Keyboard, StatusBar, ScrollView } from 'react-native'
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../firebase';
 import { useNavigation } from '@react-navigation/core';
 
 const LoginScreen = () => {
+    // State management
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
 
+    // Set up navigation
     const navigation = useNavigation();
 
+    // If the user is signed in, navigate to the HomeScreen
     useEffect(() => {
         const unsubscribe = auth.onAuthStateChanged(user => {
             if (user) {
@@ -20,6 +23,7 @@ const LoginScreen = () => {
         return unsubscribe
     }, [])
 
+    // Register the user and sign them in
     const handleSignUp = () => {
         const auth = getAuth();
         createUserWithEmailAndPassword(auth, email, password)
@@ -30,6 +34,8 @@ const LoginScreen = () => {
             .catch(error => alert(error.message))
     }
 
+
+    // Sign in the user
     const handleLogin = () => {
         const auth = getAuth();
         signInWithEmailAndPassword(auth, email, password)
@@ -41,57 +47,71 @@ const LoginScreen = () => {
     }
 
     return (
-        <KeyboardAvoidingView style={styles.container} behavior="height">
+        <ScrollView contentContainerStyle={styles.mainView}>
+            {/* Status bar coloring */}
             <StatusBar
                 backgroundColor="#171717"
                 barStyle="light-content"
             />
-            <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-                <View style={styles.inputContainer}>
-                    <Text style={styles.header}>APP OF MIDAS</Text>
-                    <Image
-                        style={styles.heroImage}
-                        source={require('../assets/coin.png')}
-                    />
-                    <TextInput
-                        placeholder="Email"
-                        value={email}
-                        onChangeText={text => setEmail(text)}
-                        style={styles.input}
-                    />
-                    <TextInput
-                        placeholder="Password"
-                        value={password}
-                        onChangeText={text => setPassword(text)}
-                        style={styles.input}
-                        secureTextEntry
-                    />
-                </View>
-            </TouchableWithoutFeedback>
+            {/* Landing page */}
+            <KeyboardAvoidingView style={styles.container} behavior={'height'} enabled={false}>
+                <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+                    <View style={styles.inputContainer}>
+                        <Text style={styles.header}>APP OF MIDAS</Text>
+                        <Image
+                            style={styles.heroImage}
+                            source={require('../assets/coin.png')}
+                        />
+                        {/* User Registration */}
+                        <TextInput
+                            placeholder="Email"
+                            value={email}
+                            onChangeText={text => setEmail(text)}
+                            style={styles.input}
+                        />
+                        <TextInput
+                            placeholder="Password"
+                            value={password}
+                            onChangeText={text => setPassword(text)}
+                            style={styles.input}
+                            secureTextEntry
+                        />
+                        {/*------------*/}
+                    </View>
+                </TouchableWithoutFeedback>
 
-            <View style={styles.buttonContainer}>
-                <TouchableOpacity onPress={handleLogin} style={styles.button}>
-                    <Text style={styles.buttonText}>Login</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                    onPress={handleSignUp}
-                    style={[styles.button, styles.buttonOutline]}
-                >
-                    <Text style={styles.buttonOutlineText}>Register</Text>
-                </TouchableOpacity>
-            </View>
-            <Text>Created by Jeffrey Chipman 2022</Text>
-        </KeyboardAvoidingView>
+                {/* Login & Register Buttons */}
+                <View style={styles.buttonContainer}>
+                    <TouchableOpacity onPress={handleLogin} style={styles.button}>
+                        <Text style={styles.buttonText}>Login</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        onPress={handleSignUp}
+                        style={[styles.button, styles.buttonOutline]}
+                    >
+                        <Text style={styles.buttonOutlineText}>Register</Text>
+                    </TouchableOpacity>
+                </View>
+                {/*------------*/}
+
+                {/* Footer */}
+                <Text>Created by Jeffrey Chipman 2022</Text>
+                {/*------------*/}
+            </KeyboardAvoidingView>
+        </ScrollView>
     )
 }
 
 export default LoginScreen
 
 const styles = StyleSheet.create({
-    container: {
-        backgroundColor: '#ffd000',
+    mainView: {
         flex: 1,
-        justifyContent: 'space-evenly',
+        backgroundColor: '#ffd000',
+    },
+    container: {
+        flex: 1,
+        justifyContent: 'space-around',
         alignItems: 'center',
     },
     header: {

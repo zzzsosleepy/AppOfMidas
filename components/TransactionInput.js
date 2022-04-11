@@ -1,15 +1,45 @@
 import React from 'react'
-import { View, TextInput, StyleSheet, Text } from 'react-native'
+import { View, TextInput, StyleSheet, Text, Pressable } from 'react-native'
 
-const TransactionInput = () => {
+const TransactionInput = (props) => {
     return (
         <View style={styles.item}>
-            <View style={[styles.square, styles.redBG]}></View>
-            <View style={[styles.square, styles.blueBG]}></View>
-            <View style={[styles.square, styles.greenBG]}></View>
-            <View style={[styles.square, styles.yellowBG]}></View>
-            <View style={[styles.square, styles.purpleBG]}></View>
-            <View style={[styles.square, styles.emptyBG]}><Text style={styles.addCategoryText}>+</Text></View>
+            <Pressable
+                style={styles.button}
+                onPress={() => props.onPress(1)}
+            >
+                <View style={[styles.square, styles.redBG]}></View>
+            </Pressable>
+            <Pressable
+                style={styles.button}
+                onPress={() => props.onPress(2)}
+            >
+                <View style={[styles.square, styles.blueBG]}></View>
+            </Pressable>
+            <Pressable
+                style={styles.button}
+                onPress={() => props.onPress(3)}
+            >
+                <View style={[styles.square, styles.greenBG]}></View>
+            </Pressable>
+            <Pressable
+                style={styles.button}
+                onPress={() => props.onPress(4)}
+            >
+                <View style={[styles.square, styles.yellowBG]}></View>
+            </Pressable>
+            <Pressable
+                style={styles.button}
+                onPress={() => props.onPress(5)}
+            >
+                <View style={[styles.square, styles.purpleBG]}></View>
+            </Pressable>
+            <Pressable
+                style={styles.button}
+                onPress={() => props.onPress(6)}
+            >
+                <View style={[styles.square, styles.emptyBG]}><Text style={styles.addCategoryText}>+</Text></View>
+            </Pressable>
             {/* <TextInput
                 style={styles.input}
                 placeholder="Enter transaction here"
@@ -34,6 +64,14 @@ const styles = StyleSheet.create({
         borderRightWidth: 2,
         borderLeftWidth: 2,
         borderTopWidth: 15,
+        shadowColor: "#000",
+        shadowOffset: {
+            width: 0,
+            height: 2
+        },
+        shadowOpacity: 0.25,
+        shadowRadius: 4,
+        elevation: 5
     },
     input: {
         textAlign: 'center',

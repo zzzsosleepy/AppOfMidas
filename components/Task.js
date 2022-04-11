@@ -2,11 +2,32 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 
 const Task = (props) => {
+    var catColor = props.color;
+    switch (catColor) {
+        case 0:
+            break;
+        case 1:
+            catColor = styles.redBG;
+            break;
+        case 2:
+            catColor = styles.blueBG;
+            break;
+        case 3:
+            catColor = styles.greenBG;
+            break;
+        case 4:
+            catColor = styles.yellowBG;
+            break;
+        case 5:
+            catColor = styles.purpleBG;
+            break;
+    }
+
     return (
         <View style={styles.container}>
             <View style={styles.item}>
                 <View style={styles.itemLeft}>
-                    <View style={[styles.square, props.color]}></View>
+                    <View style={[styles.square, catColor]}></View>
                     {props.type === 'purchase' ?
                         <Text style={styles.itemText}>{props.text} <Text style={styles.bold}>-${props.cost}</Text></Text>
                         :
@@ -42,6 +63,14 @@ const styles = StyleSheet.create({
         borderRightWidth: 2,
         borderLeftWidth: 2,
         borderTopWidth: 2,
+        shadowColor: "#000",
+        shadowOffset: {
+            width: 0,
+            height: 2
+        },
+        shadowOpacity: 0.25,
+        shadowRadius: 4,
+        elevation: 5
     },
     bold: {
         fontWeight: 'bold',
@@ -74,6 +103,21 @@ const styles = StyleSheet.create({
         borderColor: '#171717',
         borderWidth: 2,
         borderRadius: 5,
+    },
+    redBG: {
+        backgroundColor: '#FF5A5F',
+    },
+    blueBG: {
+        backgroundColor: '#55BCF6',
+    },
+    greenBG: {
+        backgroundColor: '#32a852',
+    },
+    yellowBG: {
+        backgroundColor: '#fcba03',
+    },
+    purpleBG: {
+        backgroundColor: '#9c27b0',
     }
 });
 

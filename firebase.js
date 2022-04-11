@@ -20,7 +20,7 @@ let app;
 if (firebase.getApps().length === 0) {
     app = firebase.initializeApp(firebaseConfig);
 } else {
-    app = firebase.app()
+    app = firebase.getApp();
 }
 
 const auth = getAuth();

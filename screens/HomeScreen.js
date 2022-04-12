@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react'
 import { useNavigation } from '@react-navigation/core';
 import Task from '../components/Task'
 import TransactionInput from '../components/TransactionInput'
-import { collection, getDocs, addDoc, getDoc, setDoc, updateDoc, deleteDoc, doc, orderBy, serverTimestamp, query, onSnapshot, where } from 'firebase/firestore';
+import { collection, getDocs, addDoc, getDoc, setDoc, updateDoc, deleteDoc, doc, orderBy, serverTimestamp, query, onSnapshot, where, arrayUnion } from 'firebase/firestore';
 import { db, authentication } from '../firebase';
 
 const HomeScreen = () => {
@@ -23,21 +23,49 @@ const HomeScreen = () => {
     const [transactionName, setTransactionName] = useState('');
     const [transactionCost, setTransactionCost] = useState('');
     const [transactionType, setTransactionType] = useState('purchase');
+    const [totalSpent, setTotalSpent] = useState(0);
+
+    const [name, setName] = useState('');
+
+    const buttonCooldown = false;
+    let cancel = false;
 
 
     useEffect(() => {
-        getBudget();
+        if (!cancel) {
+            getUserInfo();
+        }
         return () => {
             // cleanup
+            cancel = true;
         }
     }, []);
 
-    const getBudget = async () => {
+    const updateBalance = (trans) => {
+        let total = 0;
+        trans.forEach(transaction => {
+            if (transaction.type === "purchase") {
+                total += parseFloat(transaction.cost);
+                console.log("Transaction cost: " + transaction.cost);
+                console.log(total);
+            } else if (transaction.type === "income") {
+                total -= parseFloat(transaction.cost);
+                console.log("Transaction income: " + transaction.cost);
+                console.log(total);
+            }
+        });
+        setTotalSpent(total);
+    }
+
+    const getUserInfo = async () => {
         const docRef = doc(db, "users", authentication.currentUser.uid);
         const docSnap = await getDoc(docRef);
 
         if (docSnap.exists()) {
-            return setUserBudget(docSnap.data().budget);
+            setUserBudget(docSnap.data().budget);
+            setName(docSnap.data().name);
+            setTransactions(docSnap.data().transactions);
+            updateBalance(docSnap.data().transactions);
         } else {
             // doc.data() will be undefined in this case
             console.log("No such document!");
@@ -58,7 +86,6 @@ const HomeScreen = () => {
     const handleCategorySelection = (cat) => {
         setCategorySelection(cat);
         setCreateModalVisible(true);
-        console.log("CAT: " + cat);
     }
 
     const setModalSquareColor = (catColor) => {
@@ -87,22 +114,56 @@ const HomeScreen = () => {
         }
     }
 
+    const prepareTransaction = async (parentButton, docRef, transType) => {
+        const addedTransaction = {
+            name: transactionName,
+            cost: transactionCost,
+            category: categorySelection,
+            date: currentDay,
+            color: categorySelection,
+            type: transType,
+        }
+        setTransactions([...transactions, addedTransaction]);
+        updateBalance([...transactions, addedTransaction]);
+        await updateDoc(docRef, {
+            transactions: arrayUnion(addedTransaction)
+        })
+        setCreateModalVisible(false);
+        setTransactionName('');
+        setTransactionCost('');
+        setTimeout(() => {
+            parentButton.disabled = false;
+        }, 1000);
+    }
+
     // Add transaction
-    const addTransaction = () => {
+    const addTransaction = async (parentButton) => {
+        parentButton.disabled = true;
+        const docRef = doc(db, "users", authentication.currentUser.uid);
         if (transactionName === '' || transactionCost === '' || transactionType === '') {
             Alert.alert('Please enter a transaction name, cost and category.');
         } else {
-            setTransactions([...transactions, {
-                name: transactionName,
-                cost: transactionCost,
-                category: categorySelection,
-                date: currentDay,
-                color: categorySelection,
-                type: transactionType,
-            }]);
-            setCreateModalVisible(false);
-            setTransactionName('');
-            setTransactionCost('');
+            if (transactionName.toLowerCase().includes('sold') && transactionType === 'purchase') {
+                Alert.alert("Your transaction name includes the word 'sold'.", 'Would you like to set the type to income?',
+                    [
+                        {
+                            text: 'Yes', onPress: () => {
+                                setTransactionType('income');
+                                prepareTransaction(parentButton, docRef, 'income');
+                            }
+                        },
+                        {
+                            text: 'No', onPress: () => {
+                                setTransactionType('purchase');
+                                prepareTransaction(parentButton, docRef, 'purchase');
+                            }, style: "cancel"
+                        },
+                    ]);
+
+            } else {
+                prepareTransaction(parentButton, docRef, transactionType);
+            };
+
         }
     }
 
@@ -135,11 +196,12 @@ const HomeScreen = () => {
                         {/* HEADER / SIGN OUT */}
                         <View style={styles.header}>
                             {/* <Text>Signed in as: {auth.currentUser?.email}</Text> */}
-                            <Text style={styles.sectionTitle}>Hello, Jeffrey!</Text>
+                            <Text style={styles.sectionTitle}>Hello, {name}!</Text>
                             <TouchableOpacity style={styles.button} onPress={handleSignOut}>
                                 <Text style={styles.buttonText}>Sign out</Text>
                             </TouchableOpacity>
                         </View>
+                        <View style={{ borderBottomColor: 'rgba(0, 0, 0, 0.2)', borderBottomWidth: 1, paddingVertical: 5, width: '100%', }}></View>
                         {/*------------*/}
 
                         {/* Budget */}
@@ -148,9 +210,8 @@ const HomeScreen = () => {
                             <Text>Enter your bi-weekly budget below:</Text>
                             <View style={styles.budgetInputView}>
                                 <Text style={styles.currencySign}>$</Text>
-                                <TextInput style={styles.budgetInput} keyboardType={'numeric'} placeholder="$$$" maxLength={10} value={userBudget} onChange={(text) => {
+                                <TextInput style={styles.budgetInput} keyboardType={'numeric'} placeholder="$$$" maxLength={10} value={userBudget.toString()} onChange={(text) => {
                                     setUserBudget(text.nativeEvent.text);
-                                    console.log(userBudget);
                                 }} />
                                 <TouchableOpacity style={styles.sectionButton} onPress={updateBudget}>
                                     <Text style={styles.buttonText}>Apply</Text></TouchableOpacity>
@@ -163,6 +224,7 @@ const HomeScreen = () => {
                         <View style={styles.tasksWrapper}>
                             <Text style={styles.sectionTitle} >Remaining Balance</Text>
                             <Text>Based on a bi-weekly budget of: ${userBudget} </Text>
+                            <Text style={styles.sectionTitle}>${userBudget - totalSpent}</Text>
                         </View>
                         {/*------------*/}
 
@@ -170,7 +232,7 @@ const HomeScreen = () => {
                         <View style={styles.tasksWrapper}>
                             <Text style={styles.sectionTitle} >View All Transactions</Text>
                             <Text>View all transactions by clicking below:</Text>
-                            <TouchableOpacity style={styles.sectionButton} onPress={() => navigation.navigate('Transactions')}>
+                            <TouchableOpacity style={styles.sectionButton} onPress={() => navigation.navigate('Transactions', { transactions: transactions, userBudget: userBudget, name: name })}>
                                 <Text style={styles.buttonText}>View all</Text></TouchableOpacity>
                         </View>
                         {/*------------*/}
@@ -208,7 +270,7 @@ const HomeScreen = () => {
                                         <Picker
                                             selectedValue={transactionType}
                                             style={styles.selectTransactionType}
-                                            onValueChange={(transType, itemIndex) => { setTransactionType(transType); console.log("Transaction type: " + transType) }}
+                                            onValueChange={(transType, itemIndex) => setTransactionType(transType)}
                                         >
                                             <Picker.Item label="Purchase" value="purchase" />
                                             <Picker.Item label="Income" value="income" />
@@ -244,9 +306,11 @@ const HomeScreen = () => {
                         <View style={styles.items}>
                             {/* This is where the transactions will go! */}
                             {transactions.map((transaction, index) => {
-                                return (
-                                    <Task text={transaction.name} cost={transaction.cost} key={index} color={transaction.color} type={transaction.type} />
-                                );
+                                if (transaction.date === currentDay) {
+                                    return (
+                                        <Task text={transaction.name} cost={transaction.cost} key={index} color={transaction.color} type={transaction.type} />
+                                    );
+                                }
                             })}
                             {/* <Task text={'McDonalds'} cost={'8.21'} color={styles.redBG} type={'purchase'} />
                             <Task text={'Credit Card Payment'} cost={'55'} color={styles.greenBG} type={'purchase'} />
@@ -261,7 +325,7 @@ const HomeScreen = () => {
                     </View>
                 </View >
             </ScrollView >
-        </View>
+        </View >
     )
 }
 

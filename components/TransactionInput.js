@@ -34,12 +34,6 @@ const TransactionInput = (props) => {
             >
                 <View style={[styles.square, styles.purpleBG]}></View>
             </Pressable>
-            <Pressable
-                style={styles.button}
-                onPress={() => props.onPress(6)}
-            >
-                <View style={[styles.square, styles.emptyBG]}><Text style={styles.addCategoryText}>+</Text></View>
-            </Pressable>
             {/* <TextInput
                 style={styles.input}
                 placeholder="Enter transaction here"

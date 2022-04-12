@@ -33,10 +33,10 @@ const RegisterScreen = () => {
             email: email,
             password: password,
             budget: 0,
-            transactionIDs: [],
+            transactions: [],
             createdAt: serverTimestamp()
         };
-        const docRef = await setDoc(userDoc, userObject)
+        await setDoc(userDoc, userObject)
         console.log(`Registering user ${name} with email ${email}`);
     }
 

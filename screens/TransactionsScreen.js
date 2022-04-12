@@ -1,15 +1,10 @@
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, StatusBar, TextInput, Alert, Modal, Pressable, Picker } from 'react-native'
-import React, { useState } from 'react'
-import { getAuth } from 'firebase/auth'
-import { useNavigation } from '@react-navigation/core';
+import React, { useState, useEffect } from 'react'
+import { collection, getDocs, addDoc, getDoc, setDoc, updateDoc, deleteDoc, doc, orderBy, serverTimestamp, query, onSnapshot, where, arrayUnion } from 'firebase/firestore';
 import Task from '../components/Task'
-import TransactionInput from '../components/TransactionInput'
+import { db, authentication } from '../firebase';
 
-const TransactionsScreen = () => {
-
-    // Set up navigation
-    const navigation = useNavigation();
-
+const TransactionsScreen = ({ route, navigation }) => {
     // Get current date and format it
     const currentDate = new Date();
     const currentDay = currentDate.toISOString().split('T')[0];
@@ -17,16 +12,59 @@ const TransactionsScreen = () => {
     // STATE MANAGEMENT
     const [userBudget, setUserBudget] = useState('');
     const [transactions, setTransactions] = useState([]);
+    const [name, setName] = useState('');
     const [createModalVisible, setCreateModalVisible] = useState(false);
     const [categorySelection, setCategorySelection] = useState(0);
     const [transactionName, setTransactionName] = useState('');
     const [transactionCost, setTransactionCost] = useState('');
     const [transactionType, setTransactionType] = useState('purchase');
+    const [totalSpent, setTotalSpent] = useState(0);
+    let cancel = false;
+
+    useEffect(() => {
+        if (!cancel) {
+            getUserInfo();
+        }
+        return () => {
+            // cleanup
+            cancel = true;
+        }
+    }, []);
+
+    const updateBalance = (trans) => {
+        let total = 0;
+        trans.forEach(transaction => {
+            if (transaction.type === "purchase") {
+                total += parseFloat(transaction.cost);
+                console.log("Transaction cost: " + transaction.cost);
+                console.log(total);
+            } else if (transaction.type === "income") {
+                total -= parseFloat(transaction.cost);
+                console.log("Transaction income: " + transaction.cost);
+                console.log(total);
+            }
+        });
+        setTotalSpent(total);
+    }
+
+    const getUserInfo = async () => {
+        const docRef = doc(db, "users", authentication.currentUser.uid);
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists()) {
+            setUserBudget(docSnap.data().budget);
+            setName(docSnap.data().name);
+            setTransactions(docSnap.data().transactions);
+            updateBalance(docSnap.data().transactions);
+        } else {
+            // doc.data() will be undefined in this case
+            console.log("No such document!");
+        }
+    }
 
     // Sign out user
-    const auth = getAuth();
     const handleSignOut = () => {
-        auth
+        authentication
             .signOut()
             .then(() => {
                 navigation.replace("Login")
@@ -82,31 +120,45 @@ const TransactionsScreen = () => {
                         {/* HEADER / SIGN OUT */}
                         <View style={styles.header}>
                             {/* <Text>Signed in as: {auth.currentUser?.email}</Text> */}
-                            <Text style={styles.sectionTitle}>Hello, Jeffrey!</Text>
+                            <TouchableOpacity style={styles.button} onPress={() => navigation.navigate("Home")}>
+                                <Text style={styles.buttonText}>Back</Text>
+                            </TouchableOpacity>
                             <TouchableOpacity style={styles.button} onPress={handleSignOut}>
                                 <Text style={styles.buttonText}>Sign out</Text>
                             </TouchableOpacity>
                         </View>
                         {/*------------*/}
 
+                        {/* HEADER / SIGN OUT */}
+                        <View style={styles.header}>
+                            {/* <Text>Signed in as: {auth.currentUser?.email}</Text> */}
+                            <Text style={styles.sectionTitle}>Hello, {name}!</Text>
+                        </View>
+                        <View style={{ borderBottomColor: 'rgba(0, 0, 0, 0.2)', borderBottomWidth: 1, paddingVertical: 5, width: '100%', }}></View>
+                        {/*------------*/}
+
                         {/* Remaining Balance */}
                         <View style={styles.tasksWrapper}>
                             <Text style={styles.sectionTitle} >Remaining Balance</Text>
                             <Text>Based on a bi-weekly budget of: ${userBudget} </Text>
+                            <Text style={styles.sectionTitle}>${userBudget - totalSpent}</Text>
                         </View>
                         {/*------------*/}
 
                         {/* All Transactions */}
                         <View style={styles.tasksWrapper}>
                             <Text style={styles.sectionTitle} >All Transactions</Text>
-                            <Text>21 transactions (2 weeks)</Text>
+                            <Text>{currentDay}</Text>
                         </View>
 
                         <View style={styles.items}>
                             {/* This is where the transactions will go! */}
                             {transactions.map((transaction, index) => {
                                 return (
-                                    <Task text={transaction.name} cost={transaction.cost} key={index} color={transaction.color} type={transaction.type} />
+                                    <View key={index} style={{ borderBottomColor: 'rgba(0, 0, 0, 0.2)', borderBottomWidth: 1, paddingVertical: 5, }}>
+                                        <Text style={styles.transactionDateText}>{transaction.date}</Text>
+                                        <Task text={transaction.name} cost={transaction.cost} color={transaction.color} type={transaction.type} />
+                                    </View>
                                 );
                             })}
                             {/* <Task text={'McDonalds'} cost={'8.21'} color={styles.redBG} type={'purchase'} />
@@ -148,31 +200,6 @@ const styles = StyleSheet.create({
         justifyContent: 'flex-end',
         height: '100%',
     },
-    budgetInput: {
-        backgroundColor: '#fff',
-        padding: 5,
-        paddingLeft: 15,
-        borderTopRightRadius: 15,
-        borderBottomLeftRadius: 15,
-        borderTopLeftRadius: 15,
-        borderBottomRightRadius: 15,
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginTop: 15,
-        textAlign: 'left',
-        width: '30%',
-        borderColor: 'rgba(0,0,0,1)',
-        borderBottomWidth: 2,
-        borderRightWidth: 2,
-        borderLeftWidth: 2,
-        borderTopWidth: 2,
-        fontSize: 18,
-    },
-    currencySign: {
-        marginTop: 12,
-        paddingRight: 5,
-        fontSize: 24,
-    },
     budgetInputView: {
         flex: 1,
         flexDirection: 'row',
@@ -190,73 +217,19 @@ const styles = StyleSheet.create({
         shadowOpacity: 1,
         shadowRadius: 3,
     },
-    addButton: {
-        backgroundColor: '#ffd000',
-    },
     buttonText: {
         color: '#e3e3e3',
         fontWeight: '700',
         fontSize: 16,
     },
-    addButtonText: {
-        color: '#171717',
-    },
     body: {
         flex: 1,
-    },
-    transactionInput: {
-        width: '75%',
-        borderRadius: 10,
-        padding: 15,
-        marginBottom: 15,
-        backgroundColor: 'rgba(0,0,0,0.1)',
-    },
-    transactionTypeView: {
-        width: '75%',
-        borderRadius: 10,
-        backgroundColor: 'rgba(0,0,0,0.1)s',
-        marginBottom: 55,
-    },
-    selectTransactionType: {
-        width: '75%',
-        height: 50,
-        backgroundColor: 'black',
-    },
-    createTransaction: {
-        display: 'flex',
-        flexDirection: 'row',
-        justifyContent: 'center',
-        alignItems: 'center',
     },
     centeredView: {
         flex: 1,
         justifyContent: "center",
         alignItems: "center",
         marginTop: 22
-    },
-    modalView: {
-        borderWidth: 10,
-        borderColor: '#171717',
-        margin: 20,
-        backgroundColor: "white",
-        borderRadius: 30,
-        paddingHorizontal: 35,
-        paddingVertical: 25,
-        alignItems: "center",
-        shadowColor: "#000",
-        width: '90%',
-        shadowOffset: {
-            width: 0,
-            height: 2
-        },
-        shadowOpacity: 0.25,
-        shadowRadius: 4,
-        elevation: 5
-    },
-    modalButtons: {
-        width: '100%',
-        flexDirection: 'row',
-        justifyContent: 'space-evenly',
     },
     square: {
         justifyContent: 'center',
@@ -277,11 +250,6 @@ const styles = StyleSheet.create({
         fontSize: 18,
         color: '#fff',
     },
-    modalText: {
-        marginBottom: 4,
-        fontSize: 18,
-        textAlign: "center"
-    },
     tasksWrapper: {
         paddingTop: 20,
         paddingHorizontal: 20,
@@ -291,6 +259,13 @@ const styles = StyleSheet.create({
         fontSize: 24,
         fontWeight: 'bold',
         color: '#171717',
+    },
+    transactionDateText: {
+        fontSize: 16,
+        color: '#171717',
+        paddingHorizontal: 35,
+        textAlign: 'right',
+        fontWeight: 'bold',
     },
     redBG: {
         backgroundColor: '#FF5A5F',

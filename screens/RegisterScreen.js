@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react'
 import { KeyboardAvoidingView, TouchableWithoutFeedback, StyleSheet, Text, TextInput, TouchableOpacity, View, Image, Keyboard, StatusBar, ScrollView } from 'react-native'
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
+import { db, authentication } from '../firebase';
 import { useNavigation } from '@react-navigation/core';
-import { authentication } from '../firebase';
 
-const LoginScreen = () => {
+const RegisterScreen = () => {
     // State management
+    const [name, setName] = useState('')
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
 
@@ -23,23 +25,28 @@ const LoginScreen = () => {
         return unsubscribe
     }, [])
 
+    const addUserToDB = async () => {
+        const user = authentication.currentUser;
+        const userDoc = doc(db, 'users', user.uid);
+        const userObject = {
+            name: name,
+            email: email,
+            password: password,
+            budget: 0,
+            transactionIDs: [],
+            createdAt: serverTimestamp()
+        };
+        const docRef = await setDoc(userDoc, userObject)
+        console.log(`Registering user ${name} with email ${email}`);
+    }
+
     // Register the user and sign them in
     const handleSignUp = () => {
         createUserWithEmailAndPassword(authentication, email, password)
             .then(userCredentials => {
                 const user = userCredentials.user;
+                addUserToDB();
                 console.log('Registered with:', user.email);
-            })
-            .catch(error => alert(error.message))
-    }
-
-
-    // Sign in the user
-    const handleLogin = () => {
-        signInWithEmailAndPassword(authentication, email, password)
-            .then(userCredentials => {
-                const user = userCredentials.user;
-                console.log('Logged in with:', user.email);
             })
             .catch(error => alert(error.message))
     }
@@ -62,6 +69,12 @@ const LoginScreen = () => {
                         />
                         {/* User Registration */}
                         <TextInput
+                            placeholder="Name"
+                            value={name}
+                            onChangeText={text => setName(text)}
+                            style={styles.input}
+                        />
+                        <TextInput
                             placeholder="Email"
                             value={email}
                             onChangeText={text => setEmail(text)}
@@ -78,10 +91,13 @@ const LoginScreen = () => {
                     </View>
                 </TouchableWithoutFeedback>
 
-                {/* Login Button */}
+                {/* Register Button */}
                 <View style={styles.buttonContainer}>
-                    <TouchableOpacity onPress={handleLogin} style={styles.button}>
-                        <Text style={styles.buttonText}>Login</Text>
+                    <TouchableOpacity
+                        onPress={handleSignUp}
+                        style={[styles.button, styles.buttonOutline]}
+                    >
+                        <Text style={styles.buttonOutlineText}>Register</Text>
                     </TouchableOpacity>
                 </View>
                 {/*------------*/}
@@ -94,7 +110,7 @@ const LoginScreen = () => {
     )
 }
 
-export default LoginScreen
+export default RegisterScreen
 
 const styles = StyleSheet.create({
     mainView: {

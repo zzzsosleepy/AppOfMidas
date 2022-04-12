@@ -1,12 +1,11 @@
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, StatusBar, TextInput, Alert, Modal, Pressable, Picker } from 'react-native'
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
+import { getAuth } from 'firebase/auth'
 import { useNavigation } from '@react-navigation/core';
 import Task from '../components/Task'
 import TransactionInput from '../components/TransactionInput'
-import { collection, getDocs, addDoc, getDoc, setDoc, updateDoc, deleteDoc, doc, orderBy, serverTimestamp, query, onSnapshot, where } from 'firebase/firestore';
-import { db, authentication } from '../firebase';
 
-const HomeScreen = () => {
+const TransactionsScreen = () => {
 
     // Set up navigation
     const navigation = useNavigation();
@@ -24,32 +23,13 @@ const HomeScreen = () => {
     const [transactionCost, setTransactionCost] = useState('');
     const [transactionType, setTransactionType] = useState('purchase');
 
-
-    useEffect(() => {
-        getBudget();
-        return () => {
-            // cleanup
-        }
-    }, []);
-
-    const getBudget = async () => {
-        const docRef = doc(db, "users", authentication.currentUser.uid);
-        const docSnap = await getDoc(docRef);
-
-        if (docSnap.exists()) {
-            return setUserBudget(docSnap.data().budget);
-        } else {
-            // doc.data() will be undefined in this case
-            console.log("No such document!");
-        }
-    }
-
     // Sign out user
+    const auth = getAuth();
     const handleSignOut = () => {
-        authentication
+        auth
             .signOut()
             .then(() => {
-                navigation.replace("Landing")
+                navigation.replace("Login")
             })
             .catch(error => alert(error.message))
     }
@@ -58,7 +38,7 @@ const HomeScreen = () => {
     const handleCategorySelection = (cat) => {
         setCategorySelection(cat);
         setCreateModalVisible(true);
-        console.log("CAT: " + cat);
+        console.log("Fired");
     }
 
     const setModalSquareColor = (catColor) => {
@@ -87,39 +67,6 @@ const HomeScreen = () => {
         }
     }
 
-    // Add transaction
-    const addTransaction = () => {
-        if (transactionName === '' || transactionCost === '' || transactionType === '') {
-            Alert.alert('Please enter a transaction name, cost and category.');
-        } else {
-            setTransactions([...transactions, {
-                name: transactionName,
-                cost: transactionCost,
-                category: categorySelection,
-                date: currentDay,
-                color: categorySelection,
-                type: transactionType,
-            }]);
-            setCreateModalVisible(false);
-            setTransactionName('');
-            setTransactionCost('');
-        }
-    }
-
-    const updateBudget = async () => {
-        const user = authentication.currentUser;
-        const userDoc = doc(db, 'users', user.uid);
-        const userObject = {
-            budget: userBudget,
-        };
-        try {
-            const docRef = await updateDoc(userDoc, userObject);
-        }
-        catch (error) {
-            console.log(error);
-        }
-    }
-
     return (
         <View style={styles.mainView}>
             {/* Status bar coloring */}
@@ -142,23 +89,6 @@ const HomeScreen = () => {
                         </View>
                         {/*------------*/}
 
-                        {/* Budget */}
-                        <View style={styles.tasksWrapper}>
-                            <Text style={styles.sectionTitle} >Budget</Text>
-                            <Text>Enter your bi-weekly budget below:</Text>
-                            <View style={styles.budgetInputView}>
-                                <Text style={styles.currencySign}>$</Text>
-                                <TextInput style={styles.budgetInput} keyboardType={'numeric'} placeholder="$$$" maxLength={10} value={userBudget} onChange={(text) => {
-                                    setUserBudget(text.nativeEvent.text);
-                                    console.log(userBudget);
-                                }} />
-                                <TouchableOpacity style={styles.sectionButton} onPress={updateBudget}>
-                                    <Text style={styles.buttonText}>Apply</Text></TouchableOpacity>
-
-                            </View>
-                        </View>
-                        {/*------------*/}
-
                         {/* Remaining Balance */}
                         <View style={styles.tasksWrapper}>
                             <Text style={styles.sectionTitle} >Remaining Balance</Text>
@@ -166,79 +96,10 @@ const HomeScreen = () => {
                         </View>
                         {/*------------*/}
 
-                        {/* View all transactions */}
+                        {/* All Transactions */}
                         <View style={styles.tasksWrapper}>
-                            <Text style={styles.sectionTitle} >View All Transactions</Text>
-                            <Text>View all transactions by clicking below:</Text>
-                            <TouchableOpacity style={styles.sectionButton} onPress={() => navigation.navigate('Transactions')}>
-                                <Text style={styles.buttonText}>View all</Text></TouchableOpacity>
-                        </View>
-                        {/*------------*/}
-
-                        {/* Create a Transaction */}
-                        <View style={styles.tasksWrapper}>
-                            <Text style={styles.sectionTitle} >Create a Transaction</Text>
-                            <Text>Select a category below:</Text>
-                        </View>
-                        <View style={styles.createTransaction}>
-                            <TransactionInput onPress={(cat) => handleCategorySelection(cat)} />
-                        </View>
-
-                        {/* Create Transaction Modal */}
-                        <Modal
-                            animationType="slide"
-                            transparent={true}
-                            visible={createModalVisible}
-                            onRequestClose={() => {
-                                setModalVisible(!createModalVisible);
-                            }}
-                        >
-                            <View style={styles.centeredView}>
-                                <View style={styles.modalView}>
-                                    <View style={[styles.square, setModalSquareColor(categorySelection)]}>{transactionName !== '' ? <Text style={styles.tempTransInfoText}>{transactionName} {transactionCost}</Text> : null}</View>
-                                    {/* Transaction name input */}
-                                    <Text style={styles.modalText}>Transaction name: </Text>
-                                    <TextInput style={styles.transactionInput} value={transactionName} onChange={(text) => setTransactionName(text.nativeEvent.text)}></TextInput>
-                                    {/* Transaction cost input */}
-                                    <Text style={styles.modalText}>Transaction cost: </Text>
-                                    <TextInput style={styles.transactionInput} keyboardType={'numeric'} value={transactionCost} onChange={(text) => setTransactionCost(text.nativeEvent.text)}></TextInput>
-                                    {/* Transaction type selector */}
-                                    <Text style={styles.modalText}>Transaction type: </Text>
-                                    <View style={styles.transactionTypeView}>
-                                        <Picker
-                                            selectedValue={transactionType}
-                                            style={styles.selectTransactionType}
-                                            onValueChange={(transType, itemIndex) => { setTransactionType(transType); console.log("Transaction type: " + transType) }}
-                                        >
-                                            <Picker.Item label="Purchase" value="purchase" />
-                                            <Picker.Item label="Income" value="income" />
-                                        </Picker>
-                                    </View>
-                                    <View style={styles.modalButtons}>
-                                        {/* Add Transaction Button */}
-                                        <Pressable
-                                            style={[styles.button, styles.addButton]}
-                                            onPress={addTransaction}
-                                        >
-                                            <Text style={[styles.buttonText, styles.addButtonText]}>Add</Text>
-                                        </Pressable>
-                                        {/* Close Modal Button */}
-                                        <Pressable
-                                            style={styles.button}
-                                            onPress={() => { setCreateModalVisible(!createModalVisible); setTransactionName(''); setTransactionCost(''); }}
-                                        >
-                                            <Text style={styles.buttonText}>Close</Text>
-                                        </Pressable>
-                                    </View>
-                                </View>
-                            </View>
-                        </Modal>
-                        {/*------------*/}
-
-                        {/* Today's Transactions */}
-                        <View style={styles.tasksWrapper}>
-                            <Text style={styles.sectionTitle} >Today's Transactions</Text>
-                            <Text>{currentDay}</Text>
+                            <Text style={styles.sectionTitle} >All Transactions</Text>
+                            <Text>21 transactions (2 weeks)</Text>
                         </View>
 
                         <View style={styles.items}>
@@ -265,7 +126,7 @@ const HomeScreen = () => {
     )
 }
 
-export default HomeScreen
+export default TransactionsScreen
 
 const styles = StyleSheet.create({
 
@@ -298,7 +159,6 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         marginTop: 15,
-        marginRight: 5,
         textAlign: 'left',
         width: '30%',
         borderColor: 'rgba(0,0,0,1)',
@@ -329,19 +189,6 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 1,
         shadowRadius: 3,
-    },
-    sectionButton: {
-        backgroundColor: '#171717',
-        width: '30%',
-        padding: 8,
-        borderRadius: 10,
-        alignItems: 'center',
-        justifyContent: 'center',
-        shadowColor: '#171717',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 1,
-        shadowRadius: 3,
-        marginTop: 15,
     },
     addButton: {
         backgroundColor: '#ffd000',

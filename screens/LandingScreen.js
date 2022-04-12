@@ -2,9 +2,8 @@ import React, { useEffect, useState } from 'react'
 import { KeyboardAvoidingView, TouchableWithoutFeedback, StyleSheet, Text, TextInput, TouchableOpacity, View, Image, Keyboard, StatusBar, ScrollView } from 'react-native'
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
 import { useNavigation } from '@react-navigation/core';
-import { authentication } from '../firebase';
 
-const LoginScreen = () => {
+const LandingScreen = () => {
     // State management
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
@@ -14,7 +13,8 @@ const LoginScreen = () => {
 
     // If the user is signed in, navigate to the HomeScreen
     useEffect(() => {
-        const unsubscribe = authentication.onAuthStateChanged(user => {
+        const auth = getAuth();
+        const unsubscribe = auth.onAuthStateChanged(user => {
             if (user) {
                 navigation.replace("Home")
             }
@@ -25,23 +25,13 @@ const LoginScreen = () => {
 
     // Register the user and sign them in
     const handleSignUp = () => {
-        createUserWithEmailAndPassword(authentication, email, password)
-            .then(userCredentials => {
-                const user = userCredentials.user;
-                console.log('Registered with:', user.email);
-            })
-            .catch(error => alert(error.message))
+        navigation.navigate("Register")
     }
 
 
     // Sign in the user
     const handleLogin = () => {
-        signInWithEmailAndPassword(authentication, email, password)
-            .then(userCredentials => {
-                const user = userCredentials.user;
-                console.log('Logged in with:', user.email);
-            })
-            .catch(error => alert(error.message))
+        navigation.navigate("Login")
     }
 
     return (
@@ -60,28 +50,19 @@ const LoginScreen = () => {
                             style={styles.heroImage}
                             source={require('../assets/coin.png')}
                         />
-                        {/* User Registration */}
-                        <TextInput
-                            placeholder="Email"
-                            value={email}
-                            onChangeText={text => setEmail(text)}
-                            style={styles.input}
-                        />
-                        <TextInput
-                            placeholder="Password"
-                            value={password}
-                            onChangeText={text => setPassword(text)}
-                            style={styles.input}
-                            secureTextEntry
-                        />
-                        {/*------------*/}
                     </View>
                 </TouchableWithoutFeedback>
 
-                {/* Login Button */}
+                {/* Login & Register Buttons */}
                 <View style={styles.buttonContainer}>
                     <TouchableOpacity onPress={handleLogin} style={styles.button}>
                         <Text style={styles.buttonText}>Login</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        onPress={handleSignUp}
+                        style={[styles.button, styles.buttonOutline]}
+                    >
+                        <Text style={styles.buttonOutlineText}>Register</Text>
                     </TouchableOpacity>
                 </View>
                 {/*------------*/}
@@ -94,7 +75,7 @@ const LoginScreen = () => {
     )
 }
 
-export default LoginScreen
+export default LandingScreen
 
 const styles = StyleSheet.create({
     mainView: {

@@ -5,6 +5,9 @@ import HomeScreen from './screens/HomeScreen';
 import TransactionsScreen from './screens/TransactionsScreen';
 import RegisterScreen from './screens/RegisterScreen';
 import LoginScreen from './screens/LoginScreen';
+import { LogBox } from 'react-native';
+LogBox.ignoreLogs(['Warning: ...']); // Ignore log notification by message
+LogBox.ignoreAllLogs();//Ignore all log notifications
 
 const Stack = createNativeStackNavigator();
 

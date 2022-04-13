@@ -48,7 +48,7 @@ const HomeScreen = () => {
     }, []);
 
     // Update the user's remaining balance
-    const updateBalance = (trans) => {
+    const updateBalance = (trans, budget) => {
         let total = 0;
         let redTrans = 0;
         let blueTrans = 0;
@@ -101,7 +101,7 @@ const HomeScreen = () => {
             setPurpleTransactions(purpleTrans);
         }
         setTotalSpent(total);
-        setRemainingBalance(userBudget - total);
+        setRemainingBalance(budget - (total * 1));
     }
 
     // Get the user's budget and transactions and name
@@ -112,8 +112,11 @@ const HomeScreen = () => {
         if (docSnap.exists()) {
             setUserBudget(docSnap.data().budget);
             setName(docSnap.data().name);
+            if (!docSnap.data().transactions) {
+                console.log(docSnap.data().transactions);
+            }
             setTransactions(docSnap.data().transactions);
-            updateBalance(docSnap.data().transactions);
+            updateBalance(docSnap.data().transactions, docSnap.data().budget);
         } else {
             // doc.data() will be undefined in this case
             console.log("No such document!");
@@ -172,7 +175,7 @@ const HomeScreen = () => {
             type: transType,
         }
         setTransactions([...transactions, addedTransaction]);
-        updateBalance([...transactions, addedTransaction]);
+        updateBalance([...transactions, addedTransaction], userBudget);
         await updateDoc(docRef, {
             transactions: arrayUnion(addedTransaction)
         })
@@ -274,35 +277,38 @@ const HomeScreen = () => {
                             <Text style={styles.sectionTitle} >Remaining Balance</Text>
                             <Text>Based on a budget of: ${userBudget} </Text>
                             <Text style={styles.sectionTitle}>${remainingBalance}</Text>
-                            <VictoryPie
-                                width={userBudget != 0 ? Dimensions.get('window').width : 0}
-                                padding={{ top: 80, bottom: 80, left: 80, right: 80 }}
-                                padAngle={0.5}
-                                cornerRadius={3}
-                                data={[{ x: "Budget", y: remainingBalance },
-                                { x: "Red", y: redTransactions },
-                                { x: "Blue", y: blueTransactions },
-                                { x: "Green", y: greenTransactions },
-                                { x: "Yellow", y: yellowTransactions },
-                                { x: "Purple", y: purpleTransactions }]}
-                                labels={({ datum }) => datum.y <= 0 ? null : `$${datum.y}`}
-                                colorScale={["rgba(0,0,0,0.3)", "#FF5A5F", "#55BCF6", "#32a852", "#fcba03", "#9c27b0"]}
-                                labelComponent={<VictoryLabel renderInPortal />}
-                                labelPlacement={({ index }) => index
-                                    ? "parallel"
-                                    : "vertical"
-                                }
-                                style={{
-                                    data: {
-                                        fillOpacity: 1, stroke: "#171717", strokeWidth: 2,
-                                    },
-                                    labels: {
-                                        fontSize: 14, fill: "#171717",
-                                        fontWeight: "bold"
-                                    },
-                                    parent: { overflow: "visible", justifyContent: "center", alignItems: "center", padding: 0 }
-                                }}
-                            />
+                            {totalSpent !== 0 ?
+                                <VictoryPie
+                                    width={userBudget != 0 ? Dimensions.get('window').width : 0}
+                                    padding={{ top: 80, bottom: 80, left: 80, right: 80 }}
+                                    padAngle={0.5}
+                                    cornerRadius={3}
+                                    data={[{ x: "Budget", y: remainingBalance },
+                                    { x: "Red", y: redTransactions },
+                                    { x: "Blue", y: blueTransactions },
+                                    { x: "Green", y: greenTransactions },
+                                    { x: "Yellow", y: yellowTransactions },
+                                    { x: "Purple", y: purpleTransactions }]}
+                                    labels={({ datum }) => datum.y <= 0 ? null : `$${datum.y}`}
+                                    colorScale={["rgba(0,0,0,0.3)", "#FF5A5F", "#55BCF6", "#32a852", "#fcba03", "#9c27b0"]}
+                                    // labelComponent={<VictoryLabel renderInPortal />}
+                                    labelPlacement={({ index }) => index
+                                        ? "parallel"
+                                        : "vertical"
+                                    }
+                                    style={{
+                                        data: {
+                                            fillOpacity: 1, stroke: "#171717", strokeWidth: 2,
+                                        },
+                                        labels: {
+                                            fontSize: 14, fill: "#171717",
+                                            fontWeight: "bold"
+                                        },
+                                        parent: { overflow: "visible", justifyContent: "center", alignItems: "center", padding: 0 }
+                                    }}
+                                /> : <View></View>
+                            }
+
                         </View>
                         {/*------------*/}
 

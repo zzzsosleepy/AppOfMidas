@@ -1,10 +1,11 @@
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, StatusBar, TextInput, Alert, Modal, Pressable, Picker } from 'react-native'
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, StatusBar, TextInput, Alert, Modal, Pressable, Picker, Dimensions } from 'react-native'
 import React, { useState, useEffect } from 'react'
 import { useNavigation } from '@react-navigation/core';
 import Task from '../components/Task'
 import TransactionInput from '../components/TransactionInput'
 import { collection, getDocs, addDoc, getDoc, setDoc, updateDoc, deleteDoc, doc, orderBy, serverTimestamp, query, onSnapshot, where, arrayUnion } from 'firebase/firestore';
 import { db, authentication } from '../firebase';
+import { VictoryPie, VictoryChart, VictoryLabel } from "victory-native";
 
 const HomeScreen = () => {
 
@@ -24,12 +25,17 @@ const HomeScreen = () => {
     const [transactionCost, setTransactionCost] = useState('');
     const [transactionType, setTransactionType] = useState('purchase');
     const [totalSpent, setTotalSpent] = useState(0);
+    const [redTransactions, setRedTransactions] = useState(0);
+    const [blueTransactions, setBlueTransactions] = useState(0);
+    const [greenTransactions, setGreenTransactions] = useState(0);
+    const [yellowTransactions, setYellowTransactions] = useState(0);
+    const [purpleTransactions, setPurpleTransactions] = useState(0);
+    const [remainingBalance, setRemainingBalance] = useState(0);
 
     const [name, setName] = useState('');
 
     const buttonCooldown = false;
     let cancel = false;
-
 
     useEffect(() => {
         if (!cancel) {
@@ -41,11 +47,36 @@ const HomeScreen = () => {
         }
     }, []);
 
+    // Update the user's remaining balance
     const updateBalance = (trans) => {
         let total = 0;
+        let redTrans = 0;
+        let blueTrans = 0;
+        let greenTrans = 0;
+        let yellowTrans = 0;
+        let purpleTrans = 0;
         trans.forEach(transaction => {
             if (transaction.type === "purchase") {
+
+                switch (transaction.category) {
+                    case 1:
+                        redTrans += parseFloat(transaction.cost);
+                        break;
+                    case 2:
+                        blueTrans += parseFloat(transaction.cost);
+                        break;
+                    case 3:
+                        greenTrans += parseFloat(transaction.cost);
+                        break;
+                    case 4:
+                        yellowTrans += parseFloat(transaction.cost);
+                        break;
+                    case 5:
+                        purpleTrans += parseFloat(transaction.cost);
+                        break;
+                }
                 total += parseFloat(transaction.cost);
+                console.log("Red transactions: " + redTransactions);
                 console.log("Transaction cost: " + transaction.cost);
                 console.log(total);
             } else if (transaction.type === "income") {
@@ -54,9 +85,26 @@ const HomeScreen = () => {
                 console.log(total);
             }
         });
+        if (redTrans != redTransactions) {
+            setRedTransactions(redTrans);
+        }
+        if (blueTrans != blueTransactions) {
+            setBlueTransactions(blueTrans);
+        }
+        if (greenTrans != greenTransactions) {
+            setGreenTransactions(greenTrans);
+        }
+        if (yellowTrans != yellowTransactions) {
+            setYellowTransactions(yellowTrans);
+        }
+        if (purpleTrans != purpleTransactions) {
+            setPurpleTransactions(purpleTrans);
+        }
         setTotalSpent(total);
+        setRemainingBalance(userBudget - total);
     }
 
+    // Get the user's budget and transactions and name
     const getUserInfo = async () => {
         const docRef = doc(db, "users", authentication.currentUser.uid);
         const docSnap = await getDoc(docRef);
@@ -167,6 +215,7 @@ const HomeScreen = () => {
         }
     }
 
+    // Update the user's budget
     const updateBudget = async () => {
         const user = authentication.currentUser;
         const userDoc = doc(db, 'users', user.uid);
@@ -207,7 +256,7 @@ const HomeScreen = () => {
                         {/* Budget */}
                         <View style={styles.tasksWrapper}>
                             <Text style={styles.sectionTitle} >Budget</Text>
-                            <Text>Enter your bi-weekly budget below:</Text>
+                            <Text>Enter your budget below:</Text>
                             <View style={styles.budgetInputView}>
                                 <Text style={styles.currencySign}>$</Text>
                                 <TextInput style={styles.budgetInput} keyboardType={'numeric'} placeholder="$$$" maxLength={10} value={userBudget.toString()} onChange={(text) => {
@@ -223,8 +272,37 @@ const HomeScreen = () => {
                         {/* Remaining Balance */}
                         <View style={styles.tasksWrapper}>
                             <Text style={styles.sectionTitle} >Remaining Balance</Text>
-                            <Text>Based on a bi-weekly budget of: ${userBudget} </Text>
-                            <Text style={styles.sectionTitle}>${userBudget - totalSpent}</Text>
+                            <Text>Based on a budget of: ${userBudget} </Text>
+                            <Text style={styles.sectionTitle}>${remainingBalance}</Text>
+                            <VictoryPie
+                                width={userBudget != 0 ? Dimensions.get('window').width : 0}
+                                padding={{ top: 80, bottom: 80, left: 80, right: 80 }}
+                                padAngle={0.5}
+                                cornerRadius={3}
+                                data={[{ x: "Budget", y: remainingBalance },
+                                { x: "Red", y: redTransactions },
+                                { x: "Blue", y: blueTransactions },
+                                { x: "Green", y: greenTransactions },
+                                { x: "Yellow", y: yellowTransactions },
+                                { x: "Purple", y: purpleTransactions }]}
+                                labels={({ datum }) => datum.y <= 0 ? null : `$${datum.y}`}
+                                colorScale={["rgba(0,0,0,0.3)", "#FF5A5F", "#55BCF6", "#32a852", "#fcba03", "#9c27b0"]}
+                                labelComponent={<VictoryLabel renderInPortal />}
+                                labelPlacement={({ index }) => index
+                                    ? "parallel"
+                                    : "vertical"
+                                }
+                                style={{
+                                    data: {
+                                        fillOpacity: 1, stroke: "#171717", strokeWidth: 2,
+                                    },
+                                    labels: {
+                                        fontSize: 14, fill: "#171717",
+                                        fontWeight: "bold"
+                                    },
+                                    parent: { overflow: "visible", justifyContent: "center", alignItems: "center", padding: 0 }
+                                }}
+                            />
                         </View>
                         {/*------------*/}
 

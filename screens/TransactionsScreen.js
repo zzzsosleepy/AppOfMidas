@@ -31,6 +31,7 @@ const TransactionsScreen = ({ route, navigation }) => {
         }
     }, []);
 
+    // Update the user's remaining balance
     const updateBalance = (trans) => {
         let total = 0;
         trans.forEach(transaction => {
@@ -47,6 +48,7 @@ const TransactionsScreen = ({ route, navigation }) => {
         setTotalSpent(total);
     }
 
+    // Get the user's budget and transactions and name
     const getUserInfo = async () => {
         const docRef = doc(db, "users", authentication.currentUser.uid);
         const docSnap = await getDoc(docRef);

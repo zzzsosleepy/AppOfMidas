@@ -15,6 +15,7 @@ const HomeScreen = () => {
     // Get current date and format it
     const currentDate = new Date();
     const currentDay = currentDate.toISOString().split('T')[0];
+    let currentTime;
 
     // STATE MANAGEMENT
     const [userBudget, setUserBudget] = useState('');
@@ -31,6 +32,7 @@ const HomeScreen = () => {
     const [yellowTransactions, setYellowTransactions] = useState(0);
     const [purpleTransactions, setPurpleTransactions] = useState(0);
     const [remainingBalance, setRemainingBalance] = useState(0);
+    const [user, setUser] = useState({});
 
     const [name, setName] = useState('');
 
@@ -39,6 +41,7 @@ const HomeScreen = () => {
 
     useEffect(() => {
         if (!cancel) {
+            updateTime();
             getUserInfo();
         }
         return () => {
@@ -46,6 +49,22 @@ const HomeScreen = () => {
             cancel = true;
         }
     }, []);
+
+    // Update the current time
+    const updateTime = () => {
+        currentTime = formatAMPM(new Date());
+    }
+
+    function formatAMPM(date) {
+        var hours = date.getHours();
+        var minutes = date.getMinutes();
+        var ampm = hours >= 12 ? 'PM' : 'AM';
+        hours = hours % 12;
+        hours = hours ? hours : 12; // the hour '0' should be '12'
+        minutes = minutes < 10 ? '0' + minutes : minutes;
+        var strTime = hours + ':' + minutes + ' ' + ampm;
+        return strTime;
+    }
 
     // Update the user's remaining balance
     const updateBalance = (trans, budget) => {
@@ -76,13 +95,8 @@ const HomeScreen = () => {
                         break;
                 }
                 total += parseFloat(transaction.cost);
-                console.log("Red transactions: " + redTransactions);
-                console.log("Transaction cost: " + transaction.cost);
-                console.log(total);
             } else if (transaction.type === "income") {
                 total -= parseFloat(transaction.cost);
-                console.log("Transaction income: " + transaction.cost);
-                console.log(total);
             }
         });
         if (redTrans != redTransactions) {
@@ -108,13 +122,11 @@ const HomeScreen = () => {
     const getUserInfo = async () => {
         const docRef = doc(db, "users", authentication.currentUser.uid);
         const docSnap = await getDoc(docRef);
+        setUser(docSnap.data());
 
         if (docSnap.exists()) {
             setUserBudget(docSnap.data().budget);
             setName(docSnap.data().name);
-            if (!docSnap.data().transactions) {
-                console.log(docSnap.data().transactions);
-            }
             setTransactions(docSnap.data().transactions);
             updateBalance(docSnap.data().transactions, docSnap.data().budget);
         } else {
@@ -166,11 +178,13 @@ const HomeScreen = () => {
     }
 
     const prepareTransaction = async (parentButton, docRef, transType) => {
+        updateTime();
         const addedTransaction = {
             name: transactionName,
             cost: transactionCost,
             category: categorySelection,
             date: currentDay,
+            time: currentTime,
             color: categorySelection,
             type: transType,
         }
@@ -225,8 +239,10 @@ const HomeScreen = () => {
         const userObject = {
             budget: userBudget,
         };
+        setUser({ ...user, budget: userBudget });
         try {
             const docRef = await updateDoc(userDoc, userObject);
+            updateBalance(transactions, userBudget);
         }
         catch (error) {
             console.log(error);
@@ -276,11 +292,11 @@ const HomeScreen = () => {
                         <View style={styles.tasksWrapper}>
                             <Text style={styles.sectionTitle} >Remaining Balance</Text>
                             <Text>Based on a budget of: ${userBudget} </Text>
-                            <Text style={styles.sectionTitle}>${remainingBalance}</Text>
+                            <Text style={styles.sectionTitle}>${remainingBalance.toFixed(2)}</Text>
                             {totalSpent !== 0 ?
                                 <VictoryPie
                                     width={userBudget != 0 ? Dimensions.get('window').width : 0}
-                                    padding={{ top: 80, bottom: 80, left: 80, right: 80 }}
+                                    padding={{ top: 100, bottom: 100, left: 100, right: 100 }}
                                     padAngle={0.5}
                                     cornerRadius={3}
                                     data={[{ x: "Budget", y: remainingBalance },
@@ -289,7 +305,7 @@ const HomeScreen = () => {
                                     { x: "Green", y: greenTransactions },
                                     { x: "Yellow", y: yellowTransactions },
                                     { x: "Purple", y: purpleTransactions }]}
-                                    labels={({ datum }) => datum.y <= 0 ? null : `$${datum.y}`}
+                                    labels={({ datum }) => datum.y <= 0 ? null : `$${datum.y.toFixed(2)}`}
                                     colorScale={["rgba(0,0,0,0.3)", "#FF5A5F", "#55BCF6", "#32a852", "#fcba03", "#9c27b0"]}
                                     // labelComponent={<VictoryLabel renderInPortal />}
                                     labelPlacement={({ index }) => index
@@ -316,7 +332,7 @@ const HomeScreen = () => {
                         <View style={styles.tasksWrapper}>
                             <Text style={styles.sectionTitle} >View All Transactions</Text>
                             <Text>View all transactions by clicking below:</Text>
-                            <TouchableOpacity style={styles.sectionButton} onPress={() => navigation.navigate('Transactions', { transactions: transactions, userBudget: userBudget, name: name })}>
+                            <TouchableOpacity style={styles.sectionButton} onPress={() => navigation.navigate('Transactions', { userDoc: user })}>
                                 <Text style={styles.buttonText}>View all</Text></TouchableOpacity>
                         </View>
                         {/*------------*/}
@@ -392,7 +408,7 @@ const HomeScreen = () => {
                             {transactions.map((transaction, index) => {
                                 if (transaction.date === currentDay) {
                                     return (
-                                        <Task text={transaction.name} cost={transaction.cost} key={index} color={transaction.color} type={transaction.type} />
+                                        <Task text={transaction.name} cost={transaction.cost} key={index} color={transaction.color} type={transaction.type} time={transaction.time} />
                                     );
                                 }
                             })}

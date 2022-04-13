@@ -28,6 +28,7 @@ const Task = (props) => {
             <View style={styles.item}>
                 <View style={styles.itemLeft}>
                     <View style={[styles.square, catColor]}></View>
+                    <Text style={styles.timeText}>{props.time}</Text>
                     {props.type === 'purchase' ?
                         <Text style={styles.itemText}>{props.text} <Text style={styles.bold}>-${props.cost}</Text></Text>
                         :
@@ -96,6 +97,10 @@ const styles = StyleSheet.create({
         flex: 1,
         marginRight: 20,
         color: '#171717',
+    },
+    timeText: {
+        fontSize: 14,
+        color: 'rgba(0,0,0,0.5)',
     },
     circular: {
         width: 12,

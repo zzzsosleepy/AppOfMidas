@@ -19,6 +19,8 @@ const TransactionsScreen = ({ route, navigation }) => {
     const [transactionCost, setTransactionCost] = useState('');
     const [transactionType, setTransactionType] = useState('purchase');
     const [totalSpent, setTotalSpent] = useState(0);
+    const [user, setUser] = useState({});
+    const [remainingBalance, setRemainingBalance] = useState(0);
     let cancel = false;
 
     useEffect(() => {
@@ -32,7 +34,7 @@ const TransactionsScreen = ({ route, navigation }) => {
     }, []);
 
     // Update the user's remaining balance
-    const updateBalance = (trans) => {
+    const updateBalance = (trans, budget) => {
         let total = 0;
         trans.forEach(transaction => {
             if (transaction.type === "purchase") {
@@ -46,22 +48,16 @@ const TransactionsScreen = ({ route, navigation }) => {
             }
         });
         setTotalSpent(total);
+        setRemainingBalance(budget - (total * 1));
     }
 
     // Get the user's budget and transactions and name
-    const getUserInfo = async () => {
-        const docRef = doc(db, "users", authentication.currentUser.uid);
-        const docSnap = await getDoc(docRef);
-
-        if (docSnap.exists()) {
-            setUserBudget(docSnap.data().budget);
-            setName(docSnap.data().name);
-            setTransactions(docSnap.data().transactions);
-            updateBalance(docSnap.data().transactions);
-        } else {
-            // doc.data() will be undefined in this case
-            console.log("No such document!");
-        }
+    const getUserInfo = () => {
+        const docSnap = route.params.userDoc;
+        setUserBudget(docSnap.budget);
+        setName(docSnap.name);
+        setTransactions(docSnap.transactions);
+        updateBalance(docSnap.transactions, docSnap.budget);
     }
 
     // Sign out user
@@ -143,7 +139,7 @@ const TransactionsScreen = ({ route, navigation }) => {
                         <View style={styles.tasksWrapper}>
                             <Text style={styles.sectionTitle} >Remaining Balance</Text>
                             <Text>Based on a bi-weekly budget of: ${userBudget} </Text>
-                            <Text style={styles.sectionTitle}>${userBudget - totalSpent}</Text>
+                            <Text style={styles.sectionTitle}>${remainingBalance.toFixed(2)}</Text>
                         </View>
                         {/*------------*/}
 
@@ -159,7 +155,7 @@ const TransactionsScreen = ({ route, navigation }) => {
                                 return (
                                     <View key={index} style={{ borderBottomColor: 'rgba(0, 0, 0, 0.2)', borderBottomWidth: 1, paddingVertical: 5, }}>
                                         <Text style={styles.transactionDateText}>{transaction.date}</Text>
-                                        <Task text={transaction.name} cost={transaction.cost} color={transaction.color} type={transaction.type} />
+                                        <Task text={transaction.name} cost={transaction.cost} color={transaction.color} type={transaction.type} time={transaction.time} />
                                     </View>
                                 );
                             })}

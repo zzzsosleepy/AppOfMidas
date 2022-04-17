@@ -5549,6 +5549,11 @@
   dependencies:
     "glob" "^7.1.3"
 
+"rn-tooltip@^3.0.1":
+  "integrity" "sha512-Re+ViSC/tvyoV+L9SS9liVcoPKET8ANXtmlxMpS0BFjdG1mvpa7IG+IthUJDnX0PBqoP/KptLh1EOxonT3r9Ug=="
+  "resolved" "https://registry.npmjs.org/rn-tooltip/-/rn-tooltip-3.0.1.tgz"
+  "version" "3.0.1"
+
 "rsvp@^4.8.4":
   "integrity" "sha512-nfMOlASu9OnRJo1mbEk2cz0D56a1MBNrJ7orjRZQG10XDyuvwksKbuXNp6qa+kbn839HwjwhBzhFmdsaEAfauA=="
   "resolved" "https://registry.npmjs.org/rsvp/-/rsvp-4.8.5.tgz"

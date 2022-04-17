@@ -34,11 +34,6 @@ const TransactionInput = (props) => {
             >
                 <View style={[styles.square, styles.purpleBG]}></View>
             </Pressable>
-            {/* <TextInput
-                style={styles.input}
-                placeholder="Enter transaction here"
-                keyboardType="default"
-            /> */}
         </View>
     )
 }
@@ -67,10 +62,6 @@ const styles = StyleSheet.create({
         shadowRadius: 4,
         elevation: 5
     },
-    input: {
-        textAlign: 'center',
-        maxWidth: '90%',
-    },
     square: {
         width: 32,
         height: 32,
@@ -79,13 +70,6 @@ const styles = StyleSheet.create({
         marginRight: 15,
         borderColor: '#171717',
         borderWidth: 2,
-    },
-    addCategoryText: {
-        fontSize: 24,
-        color: '#171717',
-        textAlign: 'center',
-        textAlignVertical: 'center',
-        lineHeight: 28,
     },
     redBG: {
         backgroundColor: '#FF5A5F',

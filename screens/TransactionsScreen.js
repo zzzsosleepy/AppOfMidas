@@ -4,7 +4,11 @@ import { collection, getDocs, addDoc, getDoc, setDoc, updateDoc, deleteDoc, doc,
 import Task from '../components/Task'
 import { db, authentication } from '../firebase';
 
+
+
 const TransactionsScreen = ({ route, navigation }) => {
+
+
     // Get current date and format it
     const currentDate = new Date();
     const currentDay = currentDate.toISOString().split('T')[0];
@@ -12,15 +16,11 @@ const TransactionsScreen = ({ route, navigation }) => {
     // STATE MANAGEMENT
     const [userBudget, setUserBudget] = useState('');
     const [transactions, setTransactions] = useState([]);
+    const [transactionCache, setTransactionCache] = useState([]);
     const [name, setName] = useState('');
-    const [createModalVisible, setCreateModalVisible] = useState(false);
-    const [categorySelection, setCategorySelection] = useState(0);
-    const [transactionName, setTransactionName] = useState('');
-    const [transactionCost, setTransactionCost] = useState('');
-    const [transactionType, setTransactionType] = useState('purchase');
     const [totalSpent, setTotalSpent] = useState(0);
-    const [user, setUser] = useState({});
     const [remainingBalance, setRemainingBalance] = useState(0);
+
     let cancel = false;
 
     useEffect(() => {
@@ -39,12 +39,8 @@ const TransactionsScreen = ({ route, navigation }) => {
         trans.forEach(transaction => {
             if (transaction.type === "purchase") {
                 total += parseFloat(transaction.cost);
-                console.log("Transaction cost: " + transaction.cost);
-                console.log(total);
             } else if (transaction.type === "income") {
                 total -= parseFloat(transaction.cost);
-                console.log("Transaction income: " + transaction.cost);
-                console.log(total);
             }
         });
         setTotalSpent(total);
@@ -57,6 +53,7 @@ const TransactionsScreen = ({ route, navigation }) => {
         setUserBudget(docSnap.budget);
         setName(docSnap.name);
         setTransactions(docSnap.transactions);
+        setTransactionCache(docSnap.transactions)
         updateBalance(docSnap.transactions, docSnap.budget);
     }
 
@@ -70,11 +67,15 @@ const TransactionsScreen = ({ route, navigation }) => {
             .catch(error => alert(error.message))
     }
 
-    // Set the selected category's state
-    const handleCategorySelection = (cat) => {
-        setCategorySelection(cat);
-        setCreateModalVisible(true);
-        console.log("Fired");
+    const searchForTransactions = (transactionName) => {
+        if (transactionName === "" && transactionCache.length > 0) {
+            setTransactions(transactionCache);
+        } else {
+            let filteredTransactions = transactions.filter(transaction => {
+                return transaction.name.toLowerCase().includes(transactionName.toLowerCase());
+            });
+            setTransactions(filteredTransactions);
+        }
     }
 
     const setModalSquareColor = (catColor) => {
@@ -103,6 +104,21 @@ const TransactionsScreen = ({ route, navigation }) => {
         }
     }
 
+    // Delete a transaction
+    const deleteTransaction = async (transaction) => {
+        console.log("Deleting transaction");
+        const docRef = doc(db, "users", authentication.currentUser.uid);
+        const newTransactions = transactions.filter(
+            (item) => item != transaction
+        );
+        setTransactions(newTransactions);
+        updateBalance(newTransactions, userBudget);
+        await updateDoc(docRef, {
+            transactions: newTransactions
+        })
+        route.params.setTransactionList(newTransactions);
+    }
+
     return (
         <View style={styles.mainView}>
             {/* Status bar coloring */}
@@ -117,7 +133,6 @@ const TransactionsScreen = ({ route, navigation }) => {
 
                         {/* HEADER / SIGN OUT */}
                         <View style={styles.header}>
-                            {/* <Text>Signed in as: {auth.currentUser?.email}</Text> */}
                             <TouchableOpacity style={styles.button} onPress={() => navigation.navigate("Home")}>
                                 <Text style={styles.buttonText}>Back</Text>
                             </TouchableOpacity>
@@ -129,7 +144,6 @@ const TransactionsScreen = ({ route, navigation }) => {
 
                         {/* HEADER / SIGN OUT */}
                         <View style={styles.header}>
-                            {/* <Text>Signed in as: {auth.currentUser?.email}</Text> */}
                             <Text style={styles.sectionTitle}>Hello, {name}!</Text>
                         </View>
                         <View style={{ borderBottomColor: 'rgba(0, 0, 0, 0.2)', borderBottomWidth: 1, paddingVertical: 5, width: '100%', }}></View>
@@ -140,6 +154,20 @@ const TransactionsScreen = ({ route, navigation }) => {
                             <Text style={styles.sectionTitle} >Remaining Balance</Text>
                             <Text>Based on a bi-weekly budget of: ${userBudget} </Text>
                             <Text style={styles.sectionTitle}>${remainingBalance.toFixed(2)}</Text>
+                        </View>
+                        {/*------------*/}
+
+                        {/* Search Transactions */}
+                        <View style={styles.tasksWrapper}>
+                            <Text style={styles.sectionTitle}>Search Transactions</Text>
+                            <Text>Enter a query below to search by transaction name</Text>
+                            <TextInput
+                                style={styles.searchInput}
+                                placeholder="Search"
+                                onChangeText={(text) => {
+                                    searchForTransactions(text);
+                                }}
+                            />
                         </View>
                         {/*------------*/}
 
@@ -155,18 +183,10 @@ const TransactionsScreen = ({ route, navigation }) => {
                                 return (
                                     <View key={index} style={{ borderBottomColor: 'rgba(0, 0, 0, 0.2)', borderBottomWidth: 1, paddingVertical: 5, }}>
                                         <Text style={styles.transactionDateText}>{transaction.date}</Text>
-                                        <Task text={transaction.name} cost={transaction.cost} color={transaction.color} type={transaction.type} time={transaction.time} />
+                                        <Task text={transaction.name} cost={transaction.cost} key={index} color={transaction.color} type={transaction.type} time={transaction.time} showTooltip={true} deleteTransaction={() => deleteTransaction(transaction)} />
                                     </View>
                                 );
                             })}
-                            {/* <Task text={'McDonalds'} cost={'8.21'} color={styles.redBG} type={'purchase'} />
-                            <Task text={'Credit Card Payment'} cost={'55'} color={styles.greenBG} type={'purchase'} />
-                            <Task text={'Amazon'} cost={'125.99'} color={styles.blueBG} type={'purchase'} />
-                            <Task text={'Sobeys'} cost={'55.99'} color={styles.blueBG} type={'purchase'} />
-                            <Task text={'Bitcoin'} cost={'60'} color={styles.yellowBG} type={'purchase'} />
-                            <Task text={'McDonalds'} cost={'25.99'} color={styles.redBG} type={'purchase'} />
-                            <Task text={'Bought a whole lotta stupid stuff online'} cost={'99.99'} color={styles.blueBG} type={'purchase'} />
-                            <Task text={'Got Paid'} cost={'750.99'} color={styles.purpleBG} type={'income'} /> */}
                         </View>
                         {/*------------*/}
                     </View>
@@ -214,6 +234,24 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 1,
         shadowRadius: 3,
+    },
+    searchInput: {
+        borderColor: '#171717',
+        backgroundColor: '#fff',
+        borderWidth: 2,
+        borderRadius: 10,
+        padding: 10,
+        width: '100%',
+        marginBottom: 10,
+        marginTop: 15,
+        shadowColor: "#000",
+        shadowOffset: {
+            width: 0,
+            height: 2
+        },
+        shadowOpacity: 0.25,
+        shadowRadius: 4,
+        elevation: 5
     },
     buttonText: {
         color: '#e3e3e3',

@@ -1,7 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import Tooltip from 'rn-tooltip';
+import OptionButton from './OptionButton';
+
+
 
 const Task = (props) => {
+
+    const [showTooltip, setShowTooltip] = useState(true);
+
     var catColor = props.color;
     switch (catColor) {
         case 0:
@@ -23,6 +30,14 @@ const Task = (props) => {
             break;
     }
 
+    const deleteItem = (deleteTransaction) => {
+        setShowTooltip(false);
+        setTimeout(() => {
+            setShowTooltip(true);
+            deleteTransaction();
+        }, 0.5);
+    }
+
     return (
         <View style={styles.container}>
             <View style={styles.item}>
@@ -33,8 +48,11 @@ const Task = (props) => {
                         <Text style={styles.itemText}>{props.text} <Text style={styles.bold}>-${props.cost}</Text></Text>
                         :
                         <Text style={styles.itemText}>{props.text} <Text style={styles.bold}>+${props.cost}</Text></Text>
+                    }{showTooltip ?
+                        <Tooltip popover={<TouchableOpacity onPress={() => deleteItem(props.deleteTransaction)}><Text style={{ color: '#ddd', fontSize: 18, }}>Delete</Text></TouchableOpacity>} withOverlay={false} backgroundColor={'#171717'} containerStyle={{ height: 50, width: 150, }}>
+                            <OptionButton />
+                        </Tooltip> : <OptionButton />
                     }
-                    <View style={styles.circular}></View>
                 </View>
             </View >
         </View>
@@ -46,6 +64,7 @@ const styles = StyleSheet.create({
         flex: 1,
         alignItems: 'center',
         width: '100%',
+        height: '100%',
     },
     item: {
         backgroundColor: '#fff',
@@ -102,12 +121,27 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: 'rgba(0,0,0,0.5)',
     },
+    showTooltip: {
+        display: 'flex',
+    },
+    hideTooltip: {
+        display: 'none',
+    },
     circular: {
-        width: 12,
-        height: 12,
+        width: 18,
+        height: 18,
         borderColor: '#171717',
+        backgroundColor: '#fff',
         borderWidth: 2,
-        borderRadius: 5,
+        borderRadius: 30,
+        position: 'relative',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    circularText: {
+        fontWeight: 'bold',
+        fontSize: 16,
+        color: '#fff',
     },
     redBG: {
         backgroundColor: '#FF5A5F',

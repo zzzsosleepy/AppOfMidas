@@ -50,6 +50,10 @@ const HomeScreen = () => {
         }
     }, []);
 
+    useEffect(() => {
+        updateBalance(transactions, userBudget)
+    }, [transactions])
+
     // Update the current time
     const updateTime = () => {
         currentTime = formatAMPM(new Date());
@@ -232,6 +236,22 @@ const HomeScreen = () => {
         }
     }
 
+    // Delete a transaction
+    const deleteTransaction = async (transaction) => {
+        console.log("Deleting transaction");
+        const docRef = doc(db, "users", authentication.currentUser.uid);
+        const newTransactions = transactions.filter(
+            (item) => item != transaction
+        );
+        user.transactions = newTransactions;
+        setTransactions(newTransactions);
+        updateBalance(newTransactions, userBudget);
+        await updateDoc(docRef, {
+            transactions: newTransactions
+        })
+    }
+
+
     // Update the user's budget
     const updateBudget = async () => {
         const user = authentication.currentUser;
@@ -249,6 +269,39 @@ const HomeScreen = () => {
         }
     }
 
+    const updateTransactionsFromAll = (transactionList) => {
+        user.transactions = transactionList;
+        setTransactions(transactionList);
+    }
+
+    const createFakeTransactions = async () => {
+        const docRef = doc(db, "users", authentication.currentUser.uid);
+        updateTime();
+        var fakeNames = ["Mcdonalds", "Amazon", "Bitcoin", "Gas", "Sobeys", "Walmart", "Car Payment", "Insurance", "Rent"];
+        var fakeCosts = [10, 50, 70, 90, 110, 130, 150, 170, 270];
+        var fakeColors = [1, 2, 3, 4, 5];
+
+        for (var i = 0; i < 10; i++) {
+            var selectedName = fakeNames[Math.floor(Math.random() * fakeNames.length)];
+            var selectedCost = fakeCosts[Math.floor(Math.random() * fakeCosts.length)];
+            var selectedColor = fakeColors[Math.floor(Math.random() * fakeColors.length)];
+
+            const addedTransaction = {
+                name: selectedName,
+                cost: selectedCost,
+                category: selectedColor,
+                date: currentDay,
+                time: currentTime,
+                color: selectedColor,
+                type: "purchase",
+            }
+            setTransactions([...transactions, addedTransaction]);
+            updateBalance([...transactions, addedTransaction], userBudget);
+            await updateDoc(docRef, {
+                transactions: arrayUnion(addedTransaction)
+            })
+        }
+    }
     return (
         <View style={styles.mainView}>
             {/* Status bar coloring */}
@@ -307,7 +360,6 @@ const HomeScreen = () => {
                                     { x: "Purple", y: purpleTransactions }]}
                                     labels={({ datum }) => datum.y <= 0 ? null : `$${datum.y.toFixed(2)}`}
                                     colorScale={["rgba(0,0,0,0.3)", "#FF5A5F", "#55BCF6", "#32a852", "#fcba03", "#9c27b0"]}
-                                    // labelComponent={<VictoryLabel renderInPortal />}
                                     labelPlacement={({ index }) => index
                                         ? "parallel"
                                         : "vertical"
@@ -320,7 +372,7 @@ const HomeScreen = () => {
                                             fontSize: 14, fill: "#171717",
                                             fontWeight: "bold"
                                         },
-                                        parent: { overflow: "visible", justifyContent: "center", alignItems: "center", padding: 0 }
+                                        parent: { overflow: "visible", justifyContent: "center", alignItems: "center", padding: 0, marginBottom: -60 }
                                     }}
                                 /> : <View></View>
                             }
@@ -332,8 +384,11 @@ const HomeScreen = () => {
                         <View style={styles.tasksWrapper}>
                             <Text style={styles.sectionTitle} >View All Transactions</Text>
                             <Text>View all transactions by clicking below:</Text>
-                            <TouchableOpacity style={styles.sectionButton} onPress={() => navigation.navigate('Transactions', { userDoc: user })}>
+                            <TouchableOpacity style={styles.sectionButton} onPress={() => navigation.navigate('Transactions', { userDoc: user, setTransactionList: updateTransactionsFromAll })}>
                                 <Text style={styles.buttonText}>View all</Text></TouchableOpacity>
+                            {authentication.currentUser.uid === 'I91qitG8c5X7dQgAGCgqeWNX4Zo1' ?
+                                <TouchableOpacity style={styles.sectionButton} onPress={() => createFakeTransactions()}>
+                                    <Text style={styles.buttonText}>Create Fake Transactions</Text></TouchableOpacity> : <View></View>}
                         </View>
                         {/*------------*/}
 
@@ -408,18 +463,10 @@ const HomeScreen = () => {
                             {transactions.map((transaction, index) => {
                                 if (transaction.date === currentDay) {
                                     return (
-                                        <Task text={transaction.name} cost={transaction.cost} key={index} color={transaction.color} type={transaction.type} time={transaction.time} />
+                                        <Task text={transaction.name} cost={transaction.cost} key={index} color={transaction.color} type={transaction.type} time={transaction.time} deleteTransaction={() => deleteTransaction(transaction)} />
                                     );
                                 }
                             })}
-                            {/* <Task text={'McDonalds'} cost={'8.21'} color={styles.redBG} type={'purchase'} />
-                            <Task text={'Credit Card Payment'} cost={'55'} color={styles.greenBG} type={'purchase'} />
-                            <Task text={'Amazon'} cost={'125.99'} color={styles.blueBG} type={'purchase'} />
-                            <Task text={'Sobeys'} cost={'55.99'} color={styles.blueBG} type={'purchase'} />
-                            <Task text={'Bitcoin'} cost={'60'} color={styles.yellowBG} type={'purchase'} />
-                            <Task text={'McDonalds'} cost={'25.99'} color={styles.redBG} type={'purchase'} />
-                            <Task text={'Bought a whole lotta stupid stuff online'} cost={'99.99'} color={styles.blueBG} type={'purchase'} />
-                            <Task text={'Got Paid'} cost={'750.99'} color={styles.purpleBG} type={'income'} /> */}
                         </View>
                         {/*------------*/}
                     </View>
